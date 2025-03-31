@@ -18,7 +18,7 @@ def get_latest_package_version(package_name: str) -> str:
         package_name: The name of the npm package to query.
 
     Returns:
-        The latest version string of the package.
+        version: The latest version string of the package.
 
     Raises:
         Exception: If the package cannot be found or there's an error connecting to the npm registry.
@@ -29,7 +29,8 @@ def get_latest_package_version(package_name: str) -> str:
         with urllib.request.urlopen(url) as response:
             if response.status == 200:
                 package_data = json.loads(response.read().decode('utf-8'))
-                return package_data['dist-tags']['latest']
+                version = package_data['dist-tags']['latest']
+                return version
             else:
                 raise Exception(f"Failed to get package info. Status code: {response.status}")
     except urllib.error.HTTPError as e:
@@ -41,6 +42,32 @@ def get_latest_package_version(package_name: str) -> str:
         raise Exception(f"Request error for {package_name}: {str(e)}")
 
 
+def check_types_package_exists(package_name: str) -> bool:
+    """
+    Check if a @types package exists for a given package name.
+
+    Args:
+        package_name: The name of the npm package to check for types.
+
+    Returns:
+        True if @types package exists, False otherwise.
+    """
+    # Skip checking for packages that already have types bundled or are already @types packages
+    if package_name.startswith('@types/') or '/' in package_name:
+        return False
+        
+    types_package = f"@types/{package_name}"
+    url = f"https://registry.npmjs.org/{types_package}"
+    
+    try:
+        with urllib.request.urlopen(url) as response:
+            return response.status == 200
+    except urllib.error.HTTPError:
+        return False
+    except Exception:
+        return False
+
+
 def get_installed_packages(directory_path: str) -> Set[str]:
     """
     Get a set of packages that are currently installed in node_modules.
@@ -49,7 +76,7 @@ def get_installed_packages(directory_path: str) -> Set[str]:
         directory_path: Path to the project directory.
 
     Returns:
-        A set of installed package names.
+        installed_packages: A set of installed package names.
     """
     node_modules_path = os.path.join(directory_path, 'node_modules')
     
