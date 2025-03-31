@@ -3,5 +3,5 @@ __pycache__/*
 
 public/
 testing/*
-npm_updater.egg-info/*
-npm_tools.egg-info/*
+jsmonitor_tools.egg-info/*
+jsmonitor_updater.egg-info/*

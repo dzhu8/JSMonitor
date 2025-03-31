@@ -1,9 +1,18 @@
-Helpful tools for configuring projects based on JavaScript and TypeScript. 
+# JSMonitor
 
-For the `npm-update` command, on install, run 
+Helpful tools for monitoring and managing JavaScript and TypeScript projects.
 
-```pip install -e .```
+## Installation
 
-to register the updater as a command. Now, the command can be called from anywhere on the system with 
+To install JSMonitor, run:
 
-```npm-updater```. 
+```
+pip install -e .
+```
+
+This will register the JSMonitor commands for use anywhere on your system.
+
+## Available Commands
+
+- `jsmonitor-updater` - Updates npm dependencies to their latest versions
+- `jsmonitor-installer` - Checks for and installs missing packages including TypeScript type definitions
