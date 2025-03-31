@@ -3,3 +3,4 @@ __pycache__/*
 
 testing/*
 npm_updater.egg-info/*
+npm_tools.egg-info/*

@@ -9,41 +9,11 @@ It fetches the latest versions from the npm registry and updates the package.jso
 import json
 import os
 import sys
-import urllib.request
-import urllib.error
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List, Tuple
 
-
-def get_latest_package_version(package_name: str) -> str:
-    """
-    Get the latest version of a package from npm registry.
-
-    Args:
-        package_name: The name of the npm package to query.
-
-    Returns:
-        The latest version string of the package.
-
-    Raises:
-        Exception: If the package cannot be found or there's an error connecting to the npm registry.
-    """
-    url = f"https://registry.npmjs.org/{package_name}"
-
-    try:
-        with urllib.request.urlopen(url) as response:
-            if response.status == 200:
-                package_data = json.loads(response.read().decode('utf-8'))
-                return package_data['dist-tags']['latest']
-            else:
-                raise Exception(f"Failed to get package info. Status code: {response.status}")
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            raise Exception(f"Package {package_name} not found")
-        else:
-            raise Exception(f"HTTP error for {package_name}: {e}")
-    except Exception as e:
-        raise Exception(f"Request error for {package_name}: {str(e)}")
+# Import shared utility functions
+from utils import get_latest_package_version
 
 
 def update_dependency(package_name: str, current_version: str, dependency_dict: Dict[str, str]) -> bool:
