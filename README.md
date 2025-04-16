@@ -10,7 +10,7 @@ To install JSMonitor, run:
 pip install -e .
 ```
 
-This will register the JSMonitor commands for use anywhere on your system.
+This will register the JSMonitor commands for use anywhere on your system. If using a virtual environment or conda environment to use the commands, make sure to activate the environment beforehand. 
 
 ## Available Commands
 
