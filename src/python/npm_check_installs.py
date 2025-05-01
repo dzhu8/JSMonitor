@@ -16,7 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List, Set, Tuple
 
 # Import shared utility functions
-from utils import get_latest_package_version, get_installed_packages, check_types_package_exists
+from .utils import get_latest_package_version, get_installed_packages, check_types_package_exists
 
 
 def find_js_ts_files(directory_path: str) -> List[str]:

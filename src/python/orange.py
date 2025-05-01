@@ -63,9 +63,8 @@ def format_with_prettier(
             cmd.append("--check")
         else:
             cmd.append("--write")
-        
-        # Check for default prettier config
-        default_config = Path(__file__).parent / ".prettierrc"
+          # Check for default prettier config
+        default_config = Path(__file__).parent.parent.parent / ".prettierrc"
         has_default_config = default_config.exists()
             
         if prettier_config:

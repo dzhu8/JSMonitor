@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List, Tuple
 
 # Import shared utility functions
-from utils import get_latest_package_version
+from .utils import get_latest_package_version
 
 
 def update_dependency(package_name: str, current_version: str, dependency_dict: Dict[str, str]) -> bool:

@@ -3,5 +3,6 @@ __pycache__/*
 
 public/
 testing/*
-jsmonitor_tools.egg-info/*
-jsmonitor_updater.egg-info/*
+src/jsmonitor_tools.egg-info/*
+src/python/__pycache__/*
+

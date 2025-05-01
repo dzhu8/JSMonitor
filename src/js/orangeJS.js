@@ -73,9 +73,8 @@ function formatWithPrettier(options) {
     // Find all matching files
     const extensionPattern = `**/*{${extensions.map(ext => ext.replace(/^\./, '')).join(',')}}`;
     const globOptions = { cwd: directory, absolute: true };
-    
-    // Check for default prettier config
-    const defaultConfigPath = path.join(__dirname, '.prettierrc');
+      // Check for default prettier config
+    const defaultConfigPath = path.join(__dirname, '..', '..', '.prettierrc');
     const hasDefaultConfig = fs.existsSync(defaultConfigPath);
     
     if (verbose) {
@@ -103,9 +102,8 @@ function formatWithPrettier(options) {
           console.log(`Processing ${filePath}`);
         }
         
-        const fileContent = fs.readFileSync(filePath, 'utf8');
-          // Get prettier options - respect .prettierrc file if exists
-        const defaultConfigPath = path.join(__dirname, '.prettierrc');
+        const fileContent = fs.readFileSync(filePath, 'utf8');        // Get prettier options - respect .prettierrc file if exists
+        const defaultConfigPath = path.join(__dirname, '..', '..', '.prettierrc');
         const hasDefaultConfig = fs.existsSync(defaultConfigPath);
 
         const options = {

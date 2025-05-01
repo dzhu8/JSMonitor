@@ -1,17 +1,18 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="jsmonitor-tools",
-    version="0.2.0",  # Updated version number
+    version="0.2.0",
     description="Monitor and manage JavaScript and TypeScript dependencies",
     author="Daniel Zhu",
     author_email="danielyumengzhu@gmail.com",
-    py_modules=["npm_package_update", "npm_check_installs", "utils", "orange"],
+    packages=find_packages("src"),
+    package_dir={"": "src"},
     entry_points={
         "console_scripts": [
-            "jsmonitor-updater=npm_package_update:main",
-            "jsmonitor-installer=npm_check_installs:main",
-            "orange=orange:main",
+            "jsmonitor-updater=python.npm_package_update:main",
+            "jsmonitor-installer=python.npm_check_installs:main",
+            "orange=python.orange:main",
         ],
     },
     python_requires=">=3.6",
