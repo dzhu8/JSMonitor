@@ -419,13 +419,17 @@ def main() -> None:
     """
     Main function to parse arguments and execute the scan and install.
     """
-    if len(sys.argv) > 1:
+    # Add support for --version flag
+    if len(sys.argv) > 1 and sys.argv[1] in ['--version', '-v']:
+        print("jsmonitor-installer v0.2.0")
+        sys.exit(0)
+        
+    if len(sys.argv) > 1 and not sys.argv[1].startswith('-'):
         directory_path = os.path.abspath(sys.argv[1])
     else:
-        print('Usage: npm_check_uninstalled_versions.py <path-to-directory>')
+        print('Usage: jsmonitor-installer [--version] <path-to-directory>')
         print('If no path is provided, the current directory will be used.')
         directory_path = os.getcwd()
-    print(directory_path)
 
     check_and_install_missing_packages(directory_path)
 

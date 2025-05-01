@@ -170,10 +170,15 @@ def main() -> None:
     """
     Main function to parse arguments and execute the update.
     """
-    if len(sys.argv) > 1:
+    # Add support for --version flag
+    if len(sys.argv) > 1 and sys.argv[1] in ['--version', '-v']:
+        print("jsmonitor-updater v0.2.0")
+        sys.exit(0)
+        
+    if len(sys.argv) > 1 and not sys.argv[1].startswith('-'):
         directory_path = os.path.abspath(sys.argv[1])
     else:
-        print('Usage: npm_package_update.py <path-to-directory>')
+        print('Usage: jsmonitor-updater [--version] <path-to-directory>')
         print('If no path is provided, the current directory will be used.')
         directory_path = os.getcwd()
 
