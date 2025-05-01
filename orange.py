@@ -5,256 +5,300 @@ Uses a regex-based approach to sort imports in JavaScript/JSX files.
 """
 
 import argparse
-import os
-import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
-def extract_imports(js_code: str) -> Tuple[List[str], str]:
+def format_with_prettier(
+    directory: Union[str, Path],
+    file_extensions: List[str] = [".js", ".jsx", ".ts", ".tsx"],
+    prettier_config: Optional[str] = None,
+    ignore_path: Optional[str] = None,
+    check_only: bool = False,
+    verbose: bool = False,
+    auto_install: bool = True,
+) -> Tuple[bool, str]:
     """
-    Extract import statements from JavaScript code using regex.
+    Format JavaScript/TypeScript files in a directory using Prettier.
     
     Args:
-        js_code: Raw JavaScript code string.
+        directory: Directory containing files to format
+        file_extensions: List of file extensions to format
+        prettier_config: Path to prettier config file (optional)
+        ignore_path: Path to .prettierignore file (optional)
+        check_only: Only check if files are formatted (don't format them)
+        verbose: Print verbose output
+        auto_install: Automatically install Prettier if not found
         
     Returns:
-        imports: List of import statement strings.
-        code_without_imports: The code with import statements removed.
-    """
-    # Match import statements
-    import_pattern = re.compile(r'^import\s+.*?[\'"];?\s*$', re.MULTILINE)
-    
-    # Find all imports
-    imports = import_pattern.findall(js_code)
-    
-    # Remove imports from code
-    code_without_imports = import_pattern.sub('', js_code)
-    
-    return imports, code_without_imports
-
-def get_import_path_depth(import_path: str) -> int:
-    """
-    Calculate the depth of an import path.
-    
-    Args:
-        import_path: The import path string to analyze.
-        
-    Returns:
-        depth: Integer representing the directory depth of the import path.
-    """
-    # Remove leading './' or '../'
-    path = import_path.lstrip('./')
-    
-    # Count directory levels
-    return path.count('/') + 1 if '/' in path else 0
-
-def extract_source_from_import(import_stmt: str) -> str:
-    """
-    Extract the source path from an import statement.
-    
-    Args:
-        import_stmt: An import statement string.
-        
-    Returns:
-        source: The source path of the import.
-    """
-    match = re.search(r'[\'"]([^\'"]+)[\'"]', import_stmt)
-    if not match:
-        return ""
-    return match.group(1)
-
-def categorize_import(import_stmt: str) -> Tuple[int, str, str]:
-    """
-    Categorize an import statement for sorting.
-    
-    Args:
-        import_stmt: An import statement string.
-        
-    Returns:
-        category: Integer representing import category (0 for absolute, 1 for relative).
-        source: The source path of the import.
-        import_stmt: The original import statement.
-    """
-    # Extract source from import statement
-    source = extract_source_from_import(import_stmt)
-    if not source:
-        # If unable to extract source, return as is
-        return (999, "", import_stmt)
-    
-    # Categorize by source type
-    category = 0 if not source.startswith('.') else 1
-    
-    # For relative imports, count directory levels
-    if category == 1:
-        depth = source.count('/') + (0 if source.startswith('./') else 2)
-        category = 10 + depth
-    
-    return (category, source.lower(), import_stmt)
-
-def sort_imports(imports: List[str]) -> List[str]:
-    """
-    Sort import declarations according to a specified priority order.
-    
-    Args:
-        imports: List of import statement strings.
-        
-    Returns:
-        result: Sorted list of import statement strings following these priorities:
-            1. Outermost directory imports first (e.g., 'react', 'lodash')
-            2. Then imports from same directory (e.g., './components')
-            3. Within each source file, imports are sorted alphabetically
-            4. Directory distance (closer directories first)
-    """
-    if not imports:
-        return []
-        
-    # Categorize and sort imports
-    categorized = [categorize_import(imp) for imp in imports]
-    categorized.sort()  # Sort by category, then by source
-    
-    # Extract sorted import statements
-    return [item[2] for item in categorized]
-
-def format_import(import_stmt: str) -> str:
-    """
-    Format an import statement by cleaning up whitespace.
-    
-    Args:
-        import_stmt: A JavaScript import statement string.
-        
-    Returns:
-        cleaned: The formatted import statement.
-    """
-    # Clean up spaces in imports
-    cleaned = re.sub(r'import\s+{', 'import {', import_stmt)
-    cleaned = re.sub(r'{\s+', '{ ', cleaned)
-    cleaned = re.sub(r'\s+}', ' }', cleaned)
-    cleaned = re.sub(r',\s+', ', ', cleaned)
-    return cleaned
-
-def format_js_imports(js_code: str) -> str:
-    """
-    Format JavaScript code to apply consistent import sorting.
-    
-    Args:
-        js_code: Raw JavaScript code string to be formatted.
-        
-    Returns:
-        result: Formatted JavaScript code with properly sorted import statements.
+        Tuple of (success, message)
     """
     try:
-        # Extract import statements
-        imports, code_without_imports = extract_imports(js_code)
-        
-        if not imports:
-            return js_code  # No imports to sort
+        if not Path(directory).exists():
+            return False, f"Directory not found: {directory}"
             
-        # Sort imports
-        sorted_imports = sort_imports(imports)
+        # Check if prettier is installed
+        try:
+            subprocess.run(
+                ["npx", "--no-install", "prettier", "--version"],
+                check=True,
+                capture_output=True,
+                text=True
+            )
+        except subprocess.CalledProcessError:
+            if auto_install:
+                # Try to install prettier automatically
+                print("Checking for Prettier install...")
+                if not ensure_prettier_installed(directory, verbose):
+                    return False, "Failed to automatically install Prettier. Please run 'npm install --save-dev prettier' first."
+            else:
+                return False, "Prettier is not installed. Run 'npm install --save-dev prettier' first."
         
-        # Format each import (clean up whitespace)
-        formatted_imports = [format_import(imp) for imp in sorted_imports]
-        
-        # Join formatted imports and add them back to the code
-        result = '\n'.join(formatted_imports) + '\n\n' + code_without_imports.lstrip()
-        
-        return result
-        
-    except Exception as e:
-        print(f"Error formatting JavaScript: {e}")
-        return js_code  # Return original code on error
-
-def format_file(file_path: str, check_only: bool = False) -> bool:
-    """
-    Format imports in a JavaScript file.
-    
-    Args:
-        file_path: Path to the JavaScript file to format.
-        check_only: If True, only check if formatting is needed without modifying the file.
-        
-    Returns:
-        success: Boolean indicating whether the operation was successful.
-    """
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-            
-        formatted_content = format_js_imports(content)
-        
-        if content == formatted_content:
-            print(f"✓ {file_path} imports are already sorted.")
-            return True
+        # Build pattern for file extensions
+        pattern = f"**/*{{{','.join([ext.lstrip('.') for ext in file_extensions])}}}"        # Build command
+        cmd = ["npx", "prettier"]
         
         if check_only:
-            print(f"✗ {file_path} imports need sorting.")
+            cmd.append("--check")
+        else:
+            cmd.append("--write")
+        
+        # Check for default prettier config
+        default_config = Path(__file__).parent / ".prettierrc"
+        has_default_config = default_config.exists()
+            
+        if prettier_config:
+            cmd.extend(["--config", prettier_config])
+        elif has_default_config:
+            cmd.extend(["--config", str(default_config)])
+            if verbose:
+                print(f"Using default prettier config: {default_config}")
+            
+        if ignore_path:
+            cmd.extend(["--ignore-path", ignore_path])
+            
+        # Add the pattern to find files
+        cmd.append(pattern)
+        
+        if verbose:
+            print(f"Running: {' '.join(cmd)}")
+          # Execute the command in the specified directory
+        result = subprocess.run(
+            cmd,
+            cwd=str(directory),
+            capture_output=True,
+            text=True
+        )
+
+        if result.returncode == 0:
+            if check_only:
+                return True, "All files are formatted correctly."
+            else:
+                return True, f"Formatting completed successfully.\n{result.stdout}"
+        else:
+            if check_only:
+                # Extract file names that need formatting from stderr
+                files_needing_format = []
+                
+                if result.stderr:
+                    for line in result.stderr.splitlines():
+                        if line.startswith('[warn]') and not 'Code style issues found in' in line:
+                            # Extract the filename (remove the [warn] prefix)
+                            filename = line.replace('[warn]', '').strip()
+                            if filename:
+                                files_needing_format.append(filename)
+                
+                if files_needing_format:
+                    files_msg = '\n'.join(f"  - {file}" for file in files_needing_format)
+                    return False, f"The following files need formatting:\n{files_msg}"
+                else:
+                    return False, f"Some files need formatting."
+            else:
+                return False, f"Formatting failed:\n{result.stderr}"
+                
+    except Exception as e:
+        return False, f"Error: {str(e)}"
+
+
+def ensure_prettier_installed(directory: Union[str, Path], verbose: bool = False) -> bool:
+    """
+    Ensure Prettier is installed in the specified directory.
+    If not present, attempts to install it locally.
+    
+    Args:
+        directory: Directory to install prettier in
+        verbose: Print verbose output
+        
+    Returns:
+        True if prettier is installed or was successfully installed, False otherwise
+    """
+    try:
+        # Check if prettier is already installed
+        result = subprocess.run(
+            ["npx", "--no-install", "prettier", "--version"],
+            cwd=str(directory),
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode == 0:
+            if verbose:
+                print(f"Prettier version {result.stdout.strip()} is already installed.")
+            return True
+            
+    except Exception:
+        # Prettier is not installed, try to install it
+        pass
+        
+    print("Prettier not found. Installing prettier...")
+    
+    try:
+        # Check if package.json exists, create if it doesn't
+        package_json = Path(directory) / "package.json"
+        if not package_json.exists():
+            if verbose:
+                print("package.json not found, creating it...")
+            subprocess.run(
+                ["npm", "init", "-y"],
+                cwd=str(directory),
+                capture_output=not verbose,
+                text=True
+            )
+            
+        # Install prettier as a dev dependency
+        install_cmd = ["npm", "install", "--save-dev", "prettier"]
+        if verbose:
+            print(f"Running: {' '.join(install_cmd)}")
+            
+        result = subprocess.run(
+            install_cmd,
+            cwd=str(directory),
+            capture_output=not verbose,
+            text=True
+        )
+        
+        if result.returncode == 0:
+            print("Prettier installed successfully.")
+            return True
+        else:
+            print(f"Failed to install Prettier: {result.stderr}")
             return False
             
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(formatted_content)
-            
-        print(f"✓ Sorted imports in {file_path}")
-        return True
-        
     except Exception as e:
-        print(f"Error formatting {file_path}: {e}")
+        print(f"Error installing Prettier: {str(e)}")
         return False
 
-def format_directory(directory: str, check_only: bool = False) -> bool:
-    """
-    Format imports in all JavaScript files in a directory recursively.
-    
-    Args:
-        directory: Path to the directory containing JavaScript files to format.
-        check_only: If True, only check if formatting is needed without modifying files.
-        
-    Returns:
-        success: Boolean indicating whether all operations were successful.
-    """
-    success = True
-    
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if file.endswith(('.js', '.jsx')):
-                file_path = os.path.join(root, file)
-                if not format_file(file_path, check_only):
-                    success = False
-                    
-    return success
 
 def main():
-    """
-    Main entry point for the JavaScript import formatter command-line tool.
+    """Main function to handle command line arguments and execute formatting."""
+    parser = argparse.ArgumentParser(
+        description="Format and organize JavaScript/TypeScript files using Prettier"
+    )
     
-    Parses command-line arguments and initiates formatting of JS files
-    either individually or recursively through directories.
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="orange v0.2.0",
+        help="Show the version number and exit"
+    )
     
-    Args:
-        None: Arguments are parsed from sys.argv
-        
-    Returns:
-        None: Exits with status code 0 on success, 1 on failure in check mode
-    """
-    parser = argparse.ArgumentParser(description='Format JavaScript import statements similar to isort for Python.')
-    parser.add_argument('paths', nargs='+', help='Files or directories to format')
-    parser.add_argument('--check', action='store_true', help='Check if imports are sorted without changing them')
+    parser.add_argument(
+        "directory", 
+        nargs="?", 
+        default=".", 
+        help="Directory containing JavaScript/TypeScript files (default: current directory)"
+    )
+    
+    parser.add_argument(
+        "--check", 
+        action="store_true", 
+        help="Check if files are formatted without modifying them"
+    )
+    
+    parser.add_argument(
+        "--extensions", 
+        type=str, 
+        default=".js,.jsx,.ts,.tsx", 
+        help="Comma-separated list of file extensions to format (default: .js,.jsx,.ts,.tsx)"
+    )
+    
+    parser.add_argument(
+        "--config", 
+        type=str,
+        help="Path to Prettier config file"
+    )
+    
+    parser.add_argument(
+        "--ignore-path", 
+        type=str,
+        help="Path to .prettierignore file"
+    )
+
+    parser.add_argument(
+        "--install", 
+        action="store_true",
+        help="Force installation of Prettier (Prettier is installed automatically if needed)"
+    )
+    
+    parser.add_argument(
+        "-v", 
+        "--verbose", 
+        action="store_true",
+        help="Print verbose output"
+    )
     
     args = parser.parse_args()
     
-    success = True
-    for path in args.paths:
-        if os.path.isdir(path):
-            if not format_directory(path, args.check):
-                success = False
-        elif os.path.isfile(path):
-            if not format_file(path, args.check):
-                success = False
-        else:
-            print(f"Error: {path} is not a valid file or directory.")
-            success = False
+    # Convert directory to Path
+    directory = Path(args.directory).resolve()
     
-    if not success and args.check:
+    # Parse extensions
+    extensions = [ext.strip() for ext in args.extensions.split(",")]
+    extensions = [ext if ext.startswith(".") else f".{ext}" for ext in extensions]
+    
+    if args.verbose:
+        print(f"Processing directory: {directory}")
+        print(f"File extensions: {extensions}")
+      # Check if prettier is installed, install it if missing or if explicitly requested
+    prettier_installed = True
+    
+    try:
+        # Try to check prettier version first
+        result = subprocess.run(
+            ["npx", "--no-install", "prettier", "--version"],
+            cwd=str(directory),
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode != 0:
+            prettier_installed = False
+    except Exception:
+        prettier_installed = False
+    
+    # Install prettier if it's not installed or if explicitly requested
+    if not prettier_installed or args.install:
+        print("Prettier not found or installation explicitly requested.")
+        if not ensure_prettier_installed(directory, args.verbose):
+            sys.exit(1)
+      # Format files with Prettier
+    success, message = format_with_prettier(
+        directory=directory,
+        file_extensions=extensions,
+        prettier_config=args.config,
+        ignore_path=args.ignore_path,
+        check_only=args.check,
+        verbose=args.verbose,
+        auto_install=True  # Always attempt to auto-install if needed
+    )
+    
+    print(message)
+    
+    if not success:
         sys.exit(1)
 
 if __name__ == "__main__":
     main()
+
+

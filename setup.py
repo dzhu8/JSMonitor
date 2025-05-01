@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="jsmonitor-tools",
-    version="0.1.0",
+    version="0.2.0",  # Updated version number
     description="Monitor and manage JavaScript and TypeScript dependencies",
     author="Daniel Zhu",
     author_email="danielyumengzhu@gmail.com",

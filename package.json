@@ -1,0 +1,19 @@
+{
+  "name": "jsmonitor",
+  "version": "1.0.0",
+  "description": "JavaScript monitoring and formatting tools",
+  "main": "orangeJS.js",
+  "bin": {
+    "orangeJS": "./orangeJS.js"
+  },
+  "scripts": {
+    "format": "node orangeJS.js",
+    "check": "node orangeJS.js --check"
+  },
+  "dependencies": {
+    "glob": "^11.0.2"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
+  }
+}
