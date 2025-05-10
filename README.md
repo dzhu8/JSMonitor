@@ -30,6 +30,9 @@ orange --version
 ## Using the Prettier Integration (orange)
 
 The `orange` command uses Node.js and Prettier to format JavaScript and TypeScript files.
+
+We recommend that `orange` be called from the outermost directory of the project (this will ensure uniform styling for all project files). Otherwise, prettier must be installed in any isolated directory it is applied to. 
+
 Prettier will be installed automatically if it's not found when you run the command. Alternatively, you can run `npm install --save-dev prettier` manually.
 
 ### Python Usage
