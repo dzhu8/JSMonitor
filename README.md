@@ -18,6 +18,7 @@ are in this directory before installing.
 - `jsmonitor-updater` - Updates npm dependencies to their latest versions
 - `jsmonitor-installer` - Checks for and installs missing packages including TypeScript type definitions
 - `orange` - Formats and organizes JavaScript/TypeScript files using Prettier
+- `format-imports` - Formats import statements in JS/TS files based on `tsconfig.json` or `jsconfig.json` path aliases.
 
 All commands support the `--version` flag to check the installed version:
 
@@ -25,6 +26,7 @@ All commands support the `--version` flag to check the installed version:
 jsmonitor-updater --version
 jsmonitor-installer --version
 orange --version
+format-imports --version
 ```
 
 ## Using the Prettier Integration (orange)
@@ -83,3 +85,33 @@ node orangeJS.js --check --verbose
 - Node.js must be installed on your system
 - For the Python version, the script uses `npx` to run Prettier
 - For the JavaScript version, the script uses the Prettier library directly
+
+## Using the Import Formatter (`format-imports`)
+
+The `jsmonitor-format-imports` command helps to standardize import paths in your JavaScript, TypeScript, JSX, TSX, and Vue files. It reads path aliases defined in `compilerOptions.paths` (along with `compilerOptions.baseUrl`) from a `tsconfig.json` or `jsconfig.json` file in your project and updates relative import statements to use these aliases where applicable.
+
+This is particularly useful for cleaning up long relative paths like `../../../../components/Button` to shorter, more manageable aliased paths like `@/components/Button`.
+
+### Command Usage
+
+```bash
+# Format imports in the current directory (looks for tsconfig.json or jsconfig.json)
+format-imports
+
+# Format imports in a specific project directory
+format-imports /path/to/your/project
+```
+
+### How it Works
+
+1.  **Configuration Discovery**: The script searches for `tsconfig.json` in the target directory. If not found, it looks for `jsconfig.json`.
+2.  **Path Alias Parsing**: It extracts `compilerOptions.baseUrl` and `compilerOptions.paths` to understand your project's module alias configuration. Only alias patterns ending with `/*` (e.g., `"@/*": ["./src/*"]`) are currently supported.
+3.  **File Scanning**: It scans for `.js`, `.ts`, `.jsx`, `.tsx`, and `.vue` files within the target directory (and its subdirectories), excluding `node_modules` and `.git`.
+4.  **Import Transformation**: For each eligible file, it parses import and export statements. If an import path can be shortened or standardized using a defined alias, the script rewrites that path.
+    *   It prioritizes the alias that corresponds to the longest (most specific) target path. For example, if `abs_imported_item_path` is `/project/src/components/ui/Button.ts`, and aliases are `{"@/": ["./src/*"], "@components/": ["./src/components/*"]}`, it would prefer `@components/ui/Button` over `@/components/ui/Button`.
+    *   If multiple aliases result in the same specificity of match, the one producing the shorter final aliased path is chosen.
+5.  **File Update**: Files are only modified if changes to import paths are made.
+
+### Prerequisites
+
+- A `tsconfig.json` or `jsconfig.json` file with `compilerOptions.baseUrl` and `compilerOptions.paths` configured in the project directory where you intend to run the command.
