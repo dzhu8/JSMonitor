@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 def format_with_prettier(
     directory: Union[str, Path],
-    file_extensions: List[str] = [".js", ".jsx", ".ts", ".tsx", ".vue"],
+    file_extensions: List[str] = [".js", ".jsx", ".ts", ".tsx", ".vue", ".html"],
     prettier_config: Optional[str] = None,
     ignore_path: Optional[str] = None,
     check_only: bool = False,
@@ -122,8 +122,8 @@ def format_with_prettier(
 
 def ensure_prettier_installed(directory: Union[str, Path], verbose: bool = False) -> bool:
     """
-    Ensure Prettier is installed in the specified directory.
-    If not present, attempts to install it locally.
+    Ensure Prettier and prettier-plugin-jsdoc are installed in the specified directory.
+    If not present, attempts to install them locally.
     
     Args:
         directory: Directory to install prettier in
@@ -132,6 +132,9 @@ def ensure_prettier_installed(directory: Union[str, Path], verbose: bool = False
     Returns:
         True if prettier is installed or was successfully installed, False otherwise
     """
+    prettier_installed = False
+    jsdoc_plugin_installed = False
+    
     try:
         # Check if prettier is already installed
         result = subprocess.run(
@@ -142,15 +145,36 @@ def ensure_prettier_installed(directory: Union[str, Path], verbose: bool = False
         )
         
         if result.returncode == 0:
+            prettier_installed = True
             if verbose:
                 print(f"Prettier version {result.stdout.strip()} is already installed.")
-            return True
             
     except Exception:
-        # Prettier is not installed, try to install it
+        # Prettier is not installed
         pass
+    
+    try:
+        # Check if prettier-plugin-jsdoc is installed by checking node_modules
+        node_modules_path = Path(directory) / "node_modules" / "prettier-plugin-jsdoc"
+        if node_modules_path.exists():
+            jsdoc_plugin_installed = True
+            if verbose:
+                print("prettier-plugin-jsdoc is already installed.")
+    except Exception:
+        pass
+    
+    # If both are installed, we're done
+    if prettier_installed and jsdoc_plugin_installed:
+        return True
         
-    print("Prettier not found. Installing prettier...")
+    # Determine what needs to be installed
+    packages_to_install = []
+    if not prettier_installed:
+        packages_to_install.append("prettier")
+    if not jsdoc_plugin_installed:
+        packages_to_install.append("prettier-plugin-jsdoc")
+    
+    print(f"Installing missing packages: {', '.join(packages_to_install)}...")
     
     try:
         # Check if package.json exists, create if it doesn't
@@ -165,8 +189,8 @@ def ensure_prettier_installed(directory: Union[str, Path], verbose: bool = False
                 text=True
             )
             
-        # Install prettier as a dev dependency
-        install_cmd = ["npm", "install", "--save-dev", "prettier"]
+        # Install packages as dev dependencies
+        install_cmd = ["npm", "install", "--save-dev"] + packages_to_install
         if verbose:
             print(f"Running: {' '.join(install_cmd)}")
             
@@ -178,14 +202,14 @@ def ensure_prettier_installed(directory: Union[str, Path], verbose: bool = False
         )
         
         if result.returncode == 0:
-            print("Prettier installed successfully.")
+            print(f"Packages installed successfully: {', '.join(packages_to_install)}")
             return True
         else:
-            print(f"Failed to install Prettier: {result.stderr}")
+            print(f"Failed to install packages: {result.stderr}")
             return False
             
     except Exception as e:
-        print(f"Error installing Prettier: {str(e)}")
+        print(f"Error installing packages: {str(e)}")
         return False
 
 
@@ -218,8 +242,8 @@ def main():
     parser.add_argument(
         "--extensions", 
         type=str, 
-        default=".js,.jsx,.ts,.tsx,.vue", 
-        help="Comma-separated list of file extensions to format (default: .js,.jsx,.ts,.tsx,.vue)"
+        default=".js,.jsx,.ts,.tsx,.vue,.html", 
+        help="Comma-separated list of file extensions to format (default: .js,.jsx,.ts,.tsx,.vue,.html)"
     )
     
     parser.add_argument(
@@ -237,7 +261,7 @@ def main():
     parser.add_argument(
         "--install", 
         action="store_true",
-        help="Force installation of Prettier (Prettier is installed automatically if needed)"
+        help="Force installation of Prettier and prettier-plugin-jsdoc (packages are installed automatically if needed)"
     )
     
     parser.add_argument(
@@ -259,8 +283,9 @@ def main():
     if args.verbose:
         print(f"Processing directory: {directory}")
         print(f"File extensions: {extensions}")
-      # Check if prettier is installed, install it if missing or if explicitly requested
+      # Check if prettier and prettier-plugin-jsdoc are installed, install them if missing or if explicitly requested
     prettier_installed = True
+    jsdoc_plugin_installed = True
     
     try:
         # Try to check prettier version first
@@ -276,9 +301,26 @@ def main():
     except Exception:
         prettier_installed = False
     
-    # Install prettier if it's not installed or if explicitly requested
-    if not prettier_installed or args.install:
-        print("Prettier not found or installation explicitly requested.")
+    try:
+        # Check if prettier-plugin-jsdoc is installed
+        node_modules_path = directory / "node_modules" / "prettier-plugin-jsdoc"
+        if not node_modules_path.exists():
+            jsdoc_plugin_installed = False
+    except Exception:
+        jsdoc_plugin_installed = False
+    
+    # Install packages if they're not installed or if explicitly requested
+    if not prettier_installed or not jsdoc_plugin_installed or args.install:
+        if args.install:
+            print("Installation explicitly requested.")
+        else:
+            missing_packages = []
+            if not prettier_installed:
+                missing_packages.append("prettier")
+            if not jsdoc_plugin_installed:
+                missing_packages.append("prettier-plugin-jsdoc")
+            print(f"Missing packages: {', '.join(missing_packages)}")
+        
         if not ensure_prettier_installed(directory, args.verbose):
             sys.exit(1)
       # Format files with Prettier

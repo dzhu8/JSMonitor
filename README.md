@@ -4,11 +4,15 @@ Helpful tools for monitoring and managing JavaScript and TypeScript projects.
 
 ## Installation
 
-To install JSMonitor, run:
+To install JSMonitor:
+
+If the JSMonitor folder has been copied/exists on the computer, navigate to that folder and run: 
 
 ```
 pip install -e .
 ```
+
+If not and installing from Python, {coming soon}.
 
 This will register the JSMonitor commands for use anywhere on your system. If using a virtual environment or conda environment to use the commands, make sure to activate the environment beforehand. Also make sure you
 are in this directory before installing. 
@@ -55,7 +59,7 @@ orange --extensions .js,.ts
 # Force installation/reinstallation of Prettier
 orange --install
 
-# Use a specific Prettier config file
+# Use a specific Prettier config file (if not given, the default config will be used- this can be found https://github.com/dzhu8/JSMonitor/blob/main/.prettierrc)
 orange --config /path/to/.prettierrc
 
 # Use a specific ignore file
