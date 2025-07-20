@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 def format_with_prettier(
     directory: Union[str, Path],
-    file_extensions: List[str] = [".js", ".jsx", ".ts", ".tsx", ".vue", ".html"],
+    file_extensions: List[str] = [".js", ".jsx", ".ts", ".tsx", ".vue", ".html", ".json"],
     prettier_config: Optional[str] = None,
     ignore_path: Optional[str] = None,
     check_only: bool = False,
@@ -242,8 +242,8 @@ def main():
     parser.add_argument(
         "--extensions", 
         type=str, 
-        default=".js,.jsx,.ts,.tsx,.vue,.html", 
-        help="Comma-separated list of file extensions to format (default: .js,.jsx,.ts,.tsx,.vue,.html)"
+        default=".js,.jsx,.ts,.tsx,.vue,.html,.json", 
+        help="Comma-separated list of file extensions to format (default: .js,.jsx,.ts,.tsx,.vue,.html,.json)"
     )
     
     parser.add_argument(
