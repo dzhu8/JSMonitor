@@ -84,6 +84,9 @@ def update_package_versions(directory_path: str) -> None:
     Raises:
         FileNotFoundError: If the directory or package.json file is not found.
         Exception: For other errors during processing.
+
+    Returns:
+        None: Writes updates to `package.json` and prints a summary to stdout.
     """
     try:
         # Check if directory exists

@@ -23,6 +23,7 @@ are in this directory before installing.
 - `jsmonitor-installer` - Checks for and installs missing packages including TypeScript type definitions
 - `orange` - Formats and organizes JavaScript/TypeScript files using Prettier
 - `format-imports` - Formats import statements in JS/TS files based on `tsconfig.json` or `jsconfig.json` path aliases.
+ - `css-import-check` - Verifies that imported `.css` files referenced from source files actually exist.
 
 All commands support the `--version` flag to check the installed version:
 
@@ -119,3 +120,47 @@ format-imports /path/to/your/project
 ### Prerequisites
 
 - A `tsconfig.json` or `jsconfig.json` file with `compilerOptions.baseUrl` and `compilerOptions.paths` configured in the project directory where you intend to run the command.
+
+
+## Using the CSS Import Checker (`css-import-check`)
+
+The `css-import-check` command scans your source files (TypeScript, JavaScript, JSX, TSX) for import statements that reference `.css` files and verifies that referenced `.css` files exist. It prints the file and line number for any missing imports and exits with a non-zero status when missing files are found.
+
+### Command Usage
+
+```bash
+# Check the current directory
+css-import-check
+
+# Check a specific directory
+css-import-check /path/to/project
+```
+
+### Options
+
+- `-v`, `--verbose`: Print verbose output
+- `--ignore <substring>`: Skip files whose path contains this substring (can be provided multiple times)
+- `--ignore-regex <regex>`: Skip files whose path matches this regex (can be provided multiple times)
+
+### Behavior
+
+- Scans files with these extensions: `.ts`, `.tsx`, `.js`, `.jsx`.
+- By default ignores `node_modules` and `dist` directories; additional ignore rules may be supplied via `--ignore` or `--ignore-regex`.
+- Runs checks in parallel and shows a simple progress indicator.
+
+### Example: run with ignores
+
+```bash
+css-import-check /path/to/project --ignore node_modules --ignore dist --ignore-regex "^/path/to/project/generated/"
+```
+
+### Exit codes
+
+- `0`: All referenced CSS files were found.
+- `1`: Missing CSS import(s) were detected.
+- `2`: Directory not found or invalid arguments.
+
+### Prerequisites
+
+- Python 3.6+ (the script uses standard library modules and runs as a console tool)
+- Run the command from the project root (or supply the project directory as the first positional argument)

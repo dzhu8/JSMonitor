@@ -14,6 +14,7 @@ setup(
             "jsmonitor-installer=python.npm_check_installs:main",
             "orange=python.orange:main",
             "format-imports=python.format_imports:main",
+            "css-import-check=python.css_import_check:main"
         ],
     },
     python_requires=">=3.6",

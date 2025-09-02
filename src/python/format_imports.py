@@ -12,7 +12,15 @@ def get_tsconfig_paths_and_baseurl(directory):
     """
     Finds tsconfig.json or jsconfig.json and extracts baseUrl and path aliases.
     Processes aliases of the form "alias_prefix/*": ["./target_path/*", ...].
-    Returns a dictionary of {alias_prefix: [absolute_target_paths]} and absolute_base_url.
+
+    Args:
+        directory: Path to the project root where tsconfig.json or jsconfig.json may live.
+
+    Returns:
+        A tuple `(resolved_aliases, abs_base_url)` where `resolved_aliases` is a
+        dictionary mapping alias prefixes to lists of absolute target directories,
+        and `abs_base_url` is the absolute baseUrl resolved from the config.
+        If no config is found or an error occurs, returns `(None, None)`.
     """
     tsconfig_filename = "tsconfig.json"
     tsconfig_path = os.path.join(directory, tsconfig_filename)
@@ -72,10 +80,18 @@ def get_tsconfig_paths_and_baseurl(directory):
 def format_single_import_path(original_module_path, current_file_abs_dir, path_aliases_map, abs_base_url):
     """
     Attempts to convert an original_module_path to an aliased path.
-    original_module_path: The path string from the import statement (e.g., '../../utils/helpers')
-    current_file_abs_dir: Absolute directory of the file containing the import.
-    path_aliases_map: Dictionary from get_tsconfig_paths_and_baseurl (e.g., {"@/": ["/abs/project/src/"]})
-    abs_base_url: Absolute base URL from tsconfig.
+
+    Args:
+        original_module_path: The module path string from the import statement
+            (e.g., '../../utils/helpers').
+        current_file_abs_dir: Absolute directory of the file containing the import.
+        path_aliases_map: Mapping produced by `get_tsconfig_paths_and_baseurl`,
+            e.g. `{"@/": ["/abs/project/src/"]}`.
+        abs_base_url: Absolute baseUrl from tsconfig.
+
+    Returns:
+        The possibly rewritten import path using the configured alias prefix,
+        or the original import path if no alias match was found.
     """
     # Skip non-relative paths (node_modules, built-ins) which don't start with '.'
     # Also skip absolute paths if they are not meant to be aliased (though less common in imports)
@@ -117,7 +133,18 @@ def format_single_import_path(original_module_path, current_file_abs_dir, path_a
     return best_aliased_path
 
 def process_file_content(content, file_abs_dir, path_aliases_map, abs_base_url):
-    """Applies import formatting to the string content of a file."""
+    """
+    Applies import formatting to the string content of a file.
+
+    Args:
+        content: The file contents as a string.
+        file_abs_dir: Absolute directory of the file being processed.
+        path_aliases_map: Alias mapping from `get_tsconfig_paths_and_baseurl`.
+        abs_base_url: Absolute baseUrl from tsconfig.
+
+    Returns:
+        The modified file content with imports rewritten where applicable.
+    """
     modified_content = content
     
     def replace_import_path_match(match_obj):
@@ -142,6 +169,9 @@ def process_file_content(content, file_abs_dir, path_aliases_map, abs_base_url):
     return modified_content
 
 def main():
+    """
+    Command-line entrypoint for formatting import paths using tsconfig/jsconfig.
+    """
     parser = argparse.ArgumentParser(description="Format import statements based on tsconfig.json/jsconfig.json paths.")
     parser.add_argument(
         "--version",

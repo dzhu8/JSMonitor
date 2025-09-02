@@ -126,8 +126,8 @@ def install_package(package_name: str, directory_path: str, is_dev_dependency: b
         is_dev_dependency: Whether to install as a dev dependency.
 
     Returns:
-        A tuple of (success, version) where success is a boolean indicating if the installation
-        was successful, and version is the installed version string.
+        A tuple `(success, version)` where `success` is a boolean indicating if the
+        installation was successful, and `version` is the installed version string.
     """
     try:
         latest_version = get_latest_package_version(package_name)
@@ -244,6 +244,9 @@ def check_and_install_missing_packages(directory_path: str) -> None:
     Raises:
         FileNotFoundError: If the directory is not found.
         Exception: For other errors during processing.
+
+    Returns:
+        None: Prints progress to stdout and may exit the process on error.
     """
     try:
         # Check if directory exists

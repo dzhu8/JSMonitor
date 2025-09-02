@@ -23,16 +23,17 @@ def format_with_prettier(
     Format JavaScript/TypeScript files in a directory using Prettier.
     
     Args:
-        directory: Directory containing files to format
-        file_extensions: List of file extensions to format
-        prettier_config: Path to prettier config file (optional)
-        ignore_path: Path to .prettierignore file (optional)
-        check_only: Only check if files are formatted (don't format them)
-        verbose: Print verbose output
-        auto_install: Automatically install Prettier if not found
-        
+        directory: Directory containing files to format.
+        file_extensions: List of file extensions to format.
+        prettier_config: Path to prettier config file (optional).
+        ignore_path: Path to .prettierignore file (optional).
+        check_only: Only check if files are formatted (don't modify files).
+        verbose: Print verbose output.
+        auto_install: Automatically install Prettier if not found.
+
     Returns:
-        Tuple of (success, message)
+        A tuple `(success, message)` where `success` is a boolean indicating
+        whether the operation succeeded, and `message` contains details.
     """
     try:
         if not Path(directory).exists():
@@ -126,11 +127,12 @@ def ensure_prettier_installed(directory: Union[str, Path], verbose: bool = False
     If not present, attempts to install them locally.
     
     Args:
-        directory: Directory to install prettier in
-        verbose: Print verbose output
-        
+        directory: Directory to install prettier in.
+        verbose: Print verbose output.
+
     Returns:
-        True if prettier is installed or was successfully installed, False otherwise
+        True if prettier (and the plugin) is already installed or was successfully
+        installed; False otherwise.
     """
     prettier_installed = False
     jsdoc_plugin_installed = False
@@ -214,7 +216,9 @@ def ensure_prettier_installed(directory: Union[str, Path], verbose: bool = False
 
 
 def main():
-    """Main function to handle command line arguments and execute formatting."""
+    """
+    Main function to handle command line arguments and execute formatting.
+    """
     parser = argparse.ArgumentParser(
         description="Format and organize JavaScript/TypeScript files using Prettier"
     )
