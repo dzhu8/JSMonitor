@@ -23,7 +23,7 @@ are in this directory before installing.
 - `jsmonitor-installer` - Checks for and installs missing packages including TypeScript type definitions
 - `orange` - Formats and organizes JavaScript/TypeScript files using Prettier
 - `format-imports` - Formats import statements in JS/TS files based on `tsconfig.json` or `jsconfig.json` path aliases.
- - `css-import-check` - Verifies that imported `.css` files referenced from source files actually exist.
+ - `image-import-check` - Verifies that imported visual assets (images, `.css`, `.svg`, etc.) referenced from source files actually exist.
 
 All commands support the `--version` flag to check the installed version:
 
@@ -122,18 +122,18 @@ format-imports /path/to/your/project
 - A `tsconfig.json` or `jsconfig.json` file with `compilerOptions.baseUrl` and `compilerOptions.paths` configured in the project directory where you intend to run the command.
 
 
-## Using the CSS Import Checker (`css-import-check`)
+## Using the Visual Import Checker (`image-import-check`)
 
-The `css-import-check` command scans your source files (TypeScript, JavaScript, JSX, TSX) for import statements that reference `.css` files and verifies that referenced `.css` files exist. It prints the file and line number for any missing imports and exits with a non-zero status when missing files are found.
+The `image-import-check` command scans your source files (TypeScript, JavaScript, JSX, TSX) for import statements that reference visual assets (for example `.css`, `.png`, `.jpg`, `.svg`, `.webp`) and verifies that the referenced files exist. It prints the file and line number for any missing imports and exits with a non-zero status when missing files are found.
 
 ### Command Usage
 
 ```bash
 # Check the current directory
-css-import-check
+image-import-check
 
 # Check a specific directory
-css-import-check /path/to/project
+image-import-check /path/to/project
 ```
 
 ### Options
@@ -151,7 +151,7 @@ css-import-check /path/to/project
 ### Example: run with ignores
 
 ```bash
-css-import-check /path/to/project --ignore node_modules --ignore dist --ignore-regex "^/path/to/project/generated/"
+image-import-check /path/to/project --ignore node_modules --ignore dist --ignore-regex "^/path/to/project/generated/"
 ```
 
 ### Exit codes

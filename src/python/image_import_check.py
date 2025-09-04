@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Command-line tool: css-import-check
+"""Command-line tool: visual-import-check
 
-Scans source files for CSS import statements and verifies that the referenced
-.css files exist at the specified location. Prints missing files with file
-and line number, and exits with code 1 if any imports point to non-existent
-files.
+Scans source files for visual asset import statements (images, CSS, SVG, etc.)
+and verifies that the referenced files exist at the specified location.
+Prints missing files with file and line number, and exits with code 1 if any
+imports point to non-existent files.
 
 This version parallelizes file checks with a ThreadPoolExecutor, shows a
 progress bar, and supports ignore rules via `--ignore` and `--ignore-regex`.
@@ -22,7 +22,12 @@ from pathlib import Path
 from typing import List, Pattern, Tuple
 
 
-CSS_IMPORT_RE = re.compile(r"^\s*import\s+([\'\"])(?P<path>.*?\.css)\1\s*;?\s*$")
+VISUAL_EXTENSIONS = r"(?:css|png|jpe?g|gif|svg|webp|avif|bmp|ico|tiff?)"
+
+IMPORT_RE = re.compile(rf"^\s*(?:import|export)\s+(?:.*from\s+)?([\'\"])(?P<path>.*?\.{VISUAL_EXTENSIONS})\1\s*;?\s*$")
+REQUIRE_RE = re.compile(rf"require\s*\(\s*([\'\"])(?P<path>.*?\.{VISUAL_EXTENSIONS})\1\s*\)")
+DYNAMIC_IMPORT_RE = re.compile(rf"import\s*\(\s*([\'\"])(?P<path>.*?\.{VISUAL_EXTENSIONS})\1\s*\)")
+IMPORT_PATTERNS = [IMPORT_RE, REQUIRE_RE, DYNAMIC_IMPORT_RE]
 
 
 def find_source_files(
@@ -148,16 +153,41 @@ def check_css_imports(
         except Exception as e:
             return [f"Failed reading {src}: {e}"]
 
-        for lineno, line in enumerate(text.splitlines(), start=1):
-            m = CSS_IMPORT_RE.match(line)
-            if not m:
-                continue
-            import_path = m.group("path")
-            resolved = (src.parent / import_path).resolve()
-            if not resolved.exists():
-                file_msgs.append(
-                    f"{src} (line {lineno}): \nCSS import not found: '{import_path}'\n"
-                )
+            for lineno, line in enumerate(text.splitlines(), start=1):
+                import_path = None
+
+                for pat in IMPORT_PATTERNS:
+                    m = pat.search(line)
+                    if m:
+                        import_path = m.group("path")
+                        break
+
+                if not import_path:
+                    continue
+
+                # Normalize and ignore remote URLs
+                import_path_clean = import_path.split('?', 1)[0].split('#', 1)[0]
+                if import_path_clean.startswith(('http://', 'https://')):
+                    continue
+
+                # Only attempt to resolve relative or absolute filesystem paths.
+                # If the import does not start with '.' or '/', assume it's a module
+                # import and skip it.
+                try:
+                    if import_path_clean.startswith('.'):
+                        resolved = (src.parent / import_path_clean).resolve()
+                    elif import_path_clean.startswith('/'):
+                        resolved = Path(import_path_clean).resolve()
+                    else:
+                        # Likely a package import (e.g., from an asset loader). Skip.
+                        continue
+
+                    if not resolved.exists():
+                        file_msgs.append(
+                            f"{src} (line {lineno}): \nVisual asset not found: '{import_path}'\n"
+                        )
+                except Exception as e:
+                    file_msgs.append(f"Failed resolving {src} (line {lineno}): {e}")
 
         return file_msgs
 

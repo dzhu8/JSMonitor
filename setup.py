@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="jsmonitor-tools",
@@ -14,7 +14,7 @@ setup(
             "jsmonitor-installer=python.npm_check_installs:main",
             "orange=python.orange:main",
             "format-imports=python.format_imports:main",
-            "css-import-check=python.css_import_check:main"
+            "image-import-check=python.image_import_check:main",
         ],
     },
     python_requires=">=3.6",

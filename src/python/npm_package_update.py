@@ -16,7 +16,9 @@ from typing import Dict, List, Tuple
 from .utils import get_latest_package_version
 
 
-def update_dependency(package_name: str, current_version: str, dependency_dict: Dict[str, str]) -> bool:
+def update_dependency(
+    package_name: str, current_version: str, dependency_dict: Dict[str, str]
+) -> bool:
     """
     Update a single dependency with its latest version.
 
@@ -39,7 +41,9 @@ def update_dependency(package_name: str, current_version: str, dependency_dict: 
 
         # Print status with clear indication of out-of-date packages
         if clean_current != latest_version:
-            print(f"  {package_name}: {current_version} → ^{latest_version} [OUT OF DATE]")
+            print(
+                f"  {package_name}: {current_version} → ^{latest_version} [OUT OF DATE]"
+            )
         else:
             print(f"  {package_name}: {current_version} → ^{latest_version} [CURRENT]")
 
@@ -66,7 +70,9 @@ def update_dependency_section(section: Dict[str, str], section_name: str):
         futures = []
         for package_name, current_version in section.items():
             futures.append(
-                executor.submit(update_dependency, package_name, current_version, section)
+                executor.submit(
+                    update_dependency, package_name, current_version, section
+                )
             )
 
         # Wait for all updates to complete
@@ -94,11 +100,11 @@ def update_package_versions(directory_path: str) -> None:
             raise FileNotFoundError(f"Directory not found: {directory_path}")
 
         # Read package.json file
-        package_json_path = os.path.join(directory_path, 'package.json')
+        package_json_path = os.path.join(directory_path, "package.json")
         if not os.path.isfile(package_json_path):
             raise FileNotFoundError(f"package.json not found in {directory_path}")
 
-        with open(package_json_path, 'r', encoding='utf-8') as f:
+        with open(package_json_path, "r", encoding="utf-8") as f:
             package_json = json.load(f)
 
         print(f"\nChecking dependencies in: {package_json_path}\n")
@@ -107,7 +113,9 @@ def update_package_versions(directory_path: str) -> None:
         out_of_date: List[Tuple[str, str, str]] = []
 
         # Track callback to collect out-of-date packages
-        def track_outdated(package_name: str, current_version: str, latest_version: str) -> None:
+        def track_outdated(
+            package_name: str, current_version: str, latest_version: str
+        ) -> None:
             clean_current = current_version.lstrip("^~>=<")
             if clean_current != latest_version:
                 out_of_date.append((package_name, current_version, latest_version))
@@ -116,17 +124,23 @@ def update_package_versions(directory_path: str) -> None:
         global update_dependency
         original_update = update_dependency
 
-        def tracked_update(package_name: str, current_version: str, dependency_dict: Dict[str, str]) -> bool:
+        def tracked_update(
+            package_name: str, current_version: str, dependency_dict: Dict[str, str]
+        ) -> bool:
             try:
                 latest_version = get_latest_package_version(package_name)
                 clean_current = current_version.lstrip("^~>=<")
                 dependency_dict[package_name] = f"^{latest_version}"
 
                 if clean_current != latest_version:
-                    print(f"  {package_name}: {current_version} → ^{latest_version} [OUT OF DATE]")
+                    print(
+                        f"  {package_name}: {current_version} → ^{latest_version} [OUT OF DATE]"
+                    )
                     out_of_date.append((package_name, current_version, latest_version))
                 else:
-                    print(f"  {package_name}: {current_version} → ^{latest_version} [CURRENT]")
+                    print(
+                        f"  {package_name}: {current_version} → ^{latest_version} [CURRENT]"
+                    )
 
                 return True
             except Exception as e:
@@ -137,18 +151,20 @@ def update_package_versions(directory_path: str) -> None:
         update_dependency = tracked_update
 
         # Update dependencies
-        update_dependency_section(package_json.get('dependencies', {}), 'dependencies')
+        update_dependency_section(package_json.get("dependencies", {}), "dependencies")
 
         # Update devDependencies
-        update_dependency_section(package_json.get('devDependencies', {}), 'devDependencies')
+        update_dependency_section(
+            package_json.get("devDependencies", {}), "devDependencies"
+        )
 
         # Restore original function
         update_dependency = original_update
 
         # Write updated package.json
-        with open(package_json_path, 'w', encoding='utf-8') as f:
+        with open(package_json_path, "w", encoding="utf-8") as f:
             json.dump(package_json, f, indent=2)
-            f.write('\n')  # Add newline at end of file
+            f.write("\n")  # Add newline at end of file
 
         # Print summary of out-of-date packages
         print("\n----- SUMMARY -----")
@@ -174,15 +190,15 @@ def main() -> None:
     Main function to parse arguments and execute the update.
     """
     # Add support for --version flag
-    if len(sys.argv) > 1 and sys.argv[1] in ['--version', '-v']:
+    if len(sys.argv) > 1 and sys.argv[1] in ["--version", "-v"]:
         print("jsmonitor-updater v0.2.0")
         sys.exit(0)
-        
-    if len(sys.argv) > 1 and not sys.argv[1].startswith('-'):
+
+    if len(sys.argv) > 1 and not sys.argv[1].startswith("-"):
         directory_path = os.path.abspath(sys.argv[1])
     else:
-        print('Usage: jsmonitor-updater [--version] <path-to-directory>')
-        print('If no path is provided, the current directory will be used.')
+        print("Usage: jsmonitor-updater [--version] <path-to-directory>")
+        print("If no path is provided, the current directory will be used.")
         directory_path = os.getcwd()
 
     update_package_versions(directory_path)

@@ -5,9 +5,9 @@ Utility functions shared between npm tools.
 
 import json
 import os
-import urllib.request
 import urllib.error
-from typing import Dict, Set, List
+import urllib.request
+from typing import Dict, List, Set
 
 
 def get_latest_package_version(package_name: str) -> str:
@@ -28,11 +28,13 @@ def get_latest_package_version(package_name: str) -> str:
     try:
         with urllib.request.urlopen(url) as response:
             if response.status == 200:
-                package_data = json.loads(response.read().decode('utf-8'))
-                version = package_data['dist-tags']['latest']
+                package_data = json.loads(response.read().decode("utf-8"))
+                version = package_data["dist-tags"]["latest"]
                 return version
             else:
-                raise Exception(f"Failed to get package info. Status code: {response.status}")
+                raise Exception(
+                    f"Failed to get package info. Status code: {response.status}"
+                )
     except urllib.error.HTTPError as e:
         if e.code == 404:
             raise Exception(f"Package {package_name} not found")
@@ -53,12 +55,12 @@ def check_types_package_exists(package_name: str) -> bool:
         True if @types package exists, False otherwise.
     """
     # Skip checking for packages that already have types bundled or are already @types packages
-    if package_name.startswith('@types/') or '/' in package_name:
+    if package_name.startswith("@types/") or "/" in package_name:
         return False
-        
+
     types_package = f"@types/{package_name}"
     url = f"https://registry.npmjs.org/{types_package}"
-    
+
     try:
         with urllib.request.urlopen(url) as response:
             return response.status == 200
@@ -78,34 +80,36 @@ def get_installed_packages(directory_path: str) -> Set[str]:
     Returns:
         installed_packages: A set of installed package names.
     """
-    node_modules_path = os.path.join(directory_path, 'node_modules')
-    
+    node_modules_path = os.path.join(directory_path, "node_modules")
+
     # If node_modules doesn't exist, no packages are installed
     if not os.path.isdir(node_modules_path):
         return set()
-    
+
     installed_packages = set()
-    
+
     # Check for packages in node_modules
     for item in os.listdir(node_modules_path):
         # Skip hidden directories and scoped packages directory
-        if item.startswith('.') or item.startswith('@'):
+        if item.startswith(".") or item.startswith("@"):
             continue
-        
+
         package_path = os.path.join(node_modules_path, item)
         if os.path.isdir(package_path):
             installed_packages.add(item)
-    
+
     # Handle scoped packages (e.g., @types/node)
-    scoped_packages_path = [os.path.join(node_modules_path, item) 
-                           for item in os.listdir(node_modules_path) 
-                           if item.startswith('@') and os.path.isdir(os.path.join(node_modules_path, item))]
-    
+    scoped_packages_path = [
+        os.path.join(node_modules_path, item)
+        for item in os.listdir(node_modules_path)
+        if item.startswith("@") and os.path.isdir(os.path.join(node_modules_path, item))
+    ]
+
     for scope_path in scoped_packages_path:
         scope_name = os.path.basename(scope_path)
         for package in os.listdir(scope_path):
             package_path = os.path.join(scope_path, package)
             if os.path.isdir(package_path):
                 installed_packages.add(f"{scope_name}/{package}")
-    
+
     return installed_packages
